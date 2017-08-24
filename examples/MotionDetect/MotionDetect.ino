@@ -16,18 +16,9 @@
 // directly to the SPI bus of the Mega (pins 50-53), or if using
 // a non-Mega, Uno-style board.
 
-#include <Adafruit_VC0706.h>
+#include <ParticleTTLCamera.h>
 #include <SPI.h>
 #include <SD.h>
-
-
-// comment out this line if using Arduino V23 or earlier
-#include <SoftwareSerial.h>         
-
-// uncomment this line if using Arduino V23 or earlier
-// #include <NewSoftSerial.h>       
-
-
 
 // SD card chip select line varies among boards/shields:
 // Adafruit SD shields and modules: pin 10
@@ -59,21 +50,15 @@
 //    desired Serial object (rather than a SoftwareSerial
 //    object) to the Adafruit_VC0706 constructor.
 
-// Using SoftwareSerial (Arduino 1.0+) or NewSoftSerial (Arduino 0023 & prior):
-#if ARDUINO >= 100
-// On Uno: camera TX connected to pin 2, camera RX to pin 3:
-SoftwareSerial cameraconnection = SoftwareSerial(2, 3);
-// On Mega: camera TX connected to pin 69 (A15), camera RX to pin 3:
-//SoftwareSerial cameraconnection = SoftwareSerial(69, 3);
-#else
-NewSoftSerial cameraconnection = NewSoftSerial(2, 3);
-#endif
-Adafruit_VC0706 cam = Adafruit_VC0706(&cameraconnection);
+// Camera TX connected to pin 2, camera RX to pin 3:
+ParticleSoftSerial cameraconnection = ParticleSoftSerial(2, 3);
+ParticleTTLCamera cam = ParticleTTLCamera(&cameraconnection);
 
 // Using hardware serial on Mega: camera TX conn. to RX1,
 // camera RX to TX1, no SoftwareSerial object is required:
-//Adafruit_VC0706 cam = Adafruit_VC0706(&Serial1);
-
+// #include <Serial2/Serial2.h>
+// #include <Serial3/Serial3.h>
+//ParticleTTLCamera cam = ParticleTTLCamera(&Serial2);
 
 void setup() {
 
@@ -90,14 +75,14 @@ void setup() {
 
   Serial.begin(9600);
   Serial.println("VC0706 Camera test");
-  
+
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
     // don't do anything more:
     return;
-  }  
-  
+  }
+
   // Try to locate the camera
   if (cam.begin()) {
     Serial.println("Camera Found:");
@@ -115,9 +100,9 @@ void setup() {
     Serial.println("-----------------");
   }
 
-  // Set the picture size - you can choose one of 640x480, 320x240 or 160x120 
+  // Set the picture size - you can choose one of 640x480, 320x240 or 160x120
   // Remember that bigger pictures take longer to transmit!
-  
+
   //cam.setImageSize(VC0706_640x480);        // biggest
   cam.setImageSize(VC0706_320x240);        // medium
   //cam.setImageSize(VC0706_160x120);          // small
@@ -136,9 +121,9 @@ void setup() {
 
   // You can also verify whether motion detection is active!
   Serial.print("Motion detection is ");
-  if (cam.getMotionDetect()) 
+  if (cam.getMotionDetect())
     Serial.println("ON");
-  else 
+  else
     Serial.println("OFF");
 }
 
@@ -147,14 +132,14 @@ void setup() {
 
 void loop() {
  if (cam.motionDetected()) {
-   Serial.println("Motion!");   
+   Serial.println("Motion!");
    cam.setMotionDetect(false);
-   
-  if (! cam.takePicture()) 
+
+  if (! cam.takePicture())
     Serial.println("Failed to snap!");
-  else 
+  else
     Serial.println("Picture taken!");
-  
+
   char filename[13];
   strcpy(filename, "IMAGE00.JPG");
   for (int i = 0; i < 100; i++) {
@@ -165,15 +150,15 @@ void loop() {
       break;
     }
   }
-  
+
   File imgFile = SD.open(filename, FILE_WRITE);
-  
+
   uint16_t jpglen = cam.frameLength();
   Serial.print(jpglen, DEC);
   Serial.println(" byte image");
- 
+
   Serial.print("Writing image to "); Serial.print(filename);
-  
+
   while (jpglen > 0) {
     // read 32 bytes at a time;
     uint8_t *buffer;
@@ -191,4 +176,3 @@ void loop() {
   cam.setMotionDetect(true);
  }
 }
-
